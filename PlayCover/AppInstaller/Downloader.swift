@@ -58,8 +58,17 @@ class DownloadApp {
             if let warningMessage = warning, let app = app {
                 let alert = NSAlert()
                 alert.messageText = NSLocalizedString(warningMessage, comment: "")
+                // Local patch: ask a real question per case instead of reusing the
+                // "Install Anyway" button label (which also dropped the app name).
+                let questionKey: String
+                switch warningMessage {
+                case "ipaLibrary.version.newer": questionKey = "ipaLibrary.version.newer.question"
+                case "ipaLibrary.version.same": questionKey = "ipaLibrary.version.same.question"
+                case "ipaLibrary.version.older": questionKey = "ipaLibrary.version.older.question"
+                default: questionKey = "alert.install.anyway"
+                }
                 alert.informativeText = String(
-                    format: NSLocalizedString("alert.install.anyway", comment: ""),
+                    format: NSLocalizedString(questionKey, comment: ""),
                     arguments: [app.name]
                 )
                 alert.alertStyle = .warning
