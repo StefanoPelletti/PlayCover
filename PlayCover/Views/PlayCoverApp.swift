@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UserNotifications
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     @AppStorage("ShowLowPowerModeAlert") var showLowPowerModeAlert = true
@@ -16,6 +17,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         UpdateScheme.checkForUpdate()
+        UpstreamCommitBadge.start()
 
         UserDefaults.standard.register(
             defaults: ["NSApplicationCrashOnExceptions": true]
@@ -67,6 +69,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 showLowPowerModeAlert = alert.suppressionButton?.state == .off
             }
         }
+    }
+}
+
+/// Fork-only: badges the Dock icon with the number of upstream `develop` commits newer than
+/// the one this build is based on (`PlayCoverUpstreamBase`, stamped into Info.plist by build.sh).
+/// macOS only draws the badge for apps granted badge permission, hence the authorization request.
+enum UpstreamCommitBadge {
+    static func start() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.badge]) { _, _ in
+            refresh()
+        }
+        Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { _ in refresh() }
+    }
+
+    static func refresh() {
+        guard let base = Bundle.main.object(forInfoDictionaryKey: "PlayCoverUpstreamBase") as? String,
+              let url = URL(string:
+                "https://api.github.com/repos/PlayCover/PlayCover/compare/\(base)...develop?per_page=1")
+        else { return }
+        var request = URLRequest(url: url)
+        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            guard let data,
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let aheadBy = json["ahead_by"] as? Int
+            else { return }
+            if #available(macOS 13.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(aheadBy)
+            } else {
+                DispatchQueue.main.async {
+                    NSApp.dockTile.badgeLabel = aheadBy > 0 ? String(aheadBy) : nil
+                }
+            }
+        }.resume()
     }
 }
 
