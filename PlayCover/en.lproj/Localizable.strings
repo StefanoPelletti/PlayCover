@@ -34,6 +34,9 @@
 "ipaLibrary.version.older" = "This version is older than the one you have installed";
 "ipaLibrary.version.same" = "App already installed";
 "ipaLibrary.version.newer" = "This version is newer than the version you have installed";
+"ipaLibrary.version.newer.question" = "Do you want to update %@ to this version?";
+"ipaLibrary.version.same.question" = "Do you want to reinstall %@?";
+"ipaLibrary.version.older.question" = "Do you want to downgrade %@ to this older version?";
 "ipaLibrary.unavailable" = "The link is unavailable";
 "ipaLibrary.alert.download" = "Are you sure you want to download this version of %@?";
 "ipaLibrary.download" = "Download";
